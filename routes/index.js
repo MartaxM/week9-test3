@@ -1,24 +1,29 @@
-var express = require("express");
+var express = require('express');
 var router = express.Router();
 const bcrypt = require("bcryptjs");
 const moongose = require("mongoose");
 const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
-const { validate } = require("../models/User");
-const { token } = require("morgan");
+const { validate } = require('../models/User');
+const { token } = require('morgan');
 const jwt = require("jsonwebtoken");
-const validateToken = require("../auth/validateToken.js");
+const validateToken = require('../auth/validateToken.js');
 
 /* GET home page. */
-router.get("/", function (req, res, next) {
-  res.render("index", { title: "Express" });
+router.get('/', function (req, res, next) {
+  res.render('index', { title: 'Express' });
 });
 
 // Register (task 1)
-router.post(
-  "/api/user/register",
-  body("email").isLength({ min: 3 }),
-  body("password").isLength({ min: 5 }),
+router.post('/api/user/register',
+  body("email").isEmail(),
+  body('password').isStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1
+  }),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -37,23 +42,21 @@ router.post(
               {
                 email: req.body.email,
                 password: hash
-              },
-              (err, ok) => {
+              }, (err, ok) => {
                 if (err) throw err;
                 return res.sendStatus(200);
               }
-            );
-          });
-        });
+            )
+          })
+        })
       }
-    });
+    })
   }
-);
+)
 
 // Log in (task 2)
 
-router.post(
-  "/api/user/login",
+router.post("/api/user/login",
   body("email").isLength({ min: 3 }),
   body("password").isLength({ min: 5 }),
   (req, res, next) => {
@@ -68,27 +71,27 @@ router.post(
             const jwtPayload = {
               id: user._id,
               email: user.email
-            };
+            }
             jwt.sign(
               jwtPayload,
               process.env.SECRET,
               {
-                expiresIn: 120
+                expiresIn:120
               },
-              (err, token) => {
-                res.json({ success: true, token });
+              (err, token)=>{
+                res.json({success:true, token});
               }
             );
           }
-        });
+        })
       }
-    });
+    })
   }
-);
+)
 
 // Route that requires authentication (task 3)
-router.get("/api/private", validateToken, (req, res, next) => {
-  res.json({ email: req.user.email });
-});
+router.get("/api/private", validateToken, (req, res,next)=>{
+  res.json({email: req.user.email});
+})
 
 module.exports = router;
